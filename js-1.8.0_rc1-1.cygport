@@ -1,0 +1,49 @@
+DESCRIPTION="Mozilla JavaScript engine"
+HOMEPAGE="http://www.mozilla.org/js/spidermonkey/"
+SRC_URI="ftp://ftp.mozilla.org/pub/mozilla.org/${PN}/${P/_/-}.tar.gz"
+SRC_DIR="js/src"
+
+PATCH_URI="
+	1.8.0-cygwin.patch
+	1.8.0-no-termcap.patch
+"
+
+PKG_NAMES="${PN} libmozjs0 libmozjs-devel"
+js_CONTENTS="usr/bin/*.exe usr/share/"
+libmozjs0_CONTENTS="usr/bin/cygmozjs.dll"
+libmozjs_devel_CONTENTS="usr/include/ usr/lib/"
+
+src_compile() {
+	lndirs
+	cd ${B}
+	cygmake -j1 -f Makefile.ref # BUILD_OPT=1 JS_THREADSAFE=1
+
+	cat > mozilla-js.pc <<-_EOF
+		prefix=/usr
+		exec_prefix=/usr
+		libdir=\${exec_prefix}/lib
+		includedir=\${prefix}/include/js
+
+		Name: SpiderMonkey
+		Description: ${DESCRIPTION}
+		Version: ${PV}
+		Libs: -L\${libdir} -lmozjs
+		Cflags: -I\${includedir} -DXP_UNIX
+	_EOF
+}
+
+src_install() {
+	cd ${B}
+	dobin CYGWIN_DBG.OBJ/*.dll CYGWIN_DBG.OBJ/js.exe
+	dolib CYGWIN_DBG.OBJ/*.a
+
+	insinto /usr/include/js
+	doins js*.h js.msg js*.tbl CYGWIN_DBG.OBJ/js*.h
+
+	insinto /usr/lib/pkgconfig
+	doins mozilla-js.pc
+
+	dodoc ${S}/../README
+	docinto html
+	dodoc ${S}/README.html
+}

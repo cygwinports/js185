@@ -1,0 +1,47 @@
+js
+------------------------------------------
+Mozilla's C implementation of JavaScript.
+
+Runtime requirements:
+  cygwin-1.7.5-1
+  libgcc1-4.3.4-3
+  libreadline7-6.0.3-2
+
+Build requirements:
+(besides corresponding -devel packages)
+  binutils-2.20.51-2
+  cygport-0.9.84-1
+  gcc4-core-4.3.4-3
+  make-3.81-2
+
+Canonical website:
+  http://www.mozilla.org/js/spidermonkey/
+
+Canonical download:
+  ftp://ftp.mozilla.org/pub/mozilla.org/js/
+
+-------------------------------------------
+
+Build instructions:
+  unpack js-1.8.0_rc1-X-src.tar.bz2
+    if you use setup to install this src package, it will be
+	 unpacked under /usr/src automatically
+  cd /usr/src
+  cygport ./js-1.8.0_rc1-X.cygport all
+
+This will create:
+  /usr/src/js-1.8.0_rc1-X-src.tar.bz2
+  /usr/src/js-1.8.0_rc1-X.tar.bz2
+  /usr/src/libmozjs0-1.8.0_rc1-X.tar.bz2
+  /usr/src/libmozjs-devel-1.8.0_rc1-X.tar.bz2
+
+-------------------------------------------
+
+Port Notes:
+
+----- version 1.8.0_rc1-1 -----
+Initial release for Cygwin 1.7.
+
+
+Cygwin port maintained by:
+http://sourceware.org/cygwinports/
