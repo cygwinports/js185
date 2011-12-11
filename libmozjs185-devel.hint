@@ -1,5 +1,5 @@
-category: Interpreters
-requires: libmozjs0
+category: Libs
+requires: libmozjs185_1.0 libnspr-devel
 external-source: js
 sdesc: "Mozilla JavaScript engine (development)"
 ldesc: "Mozilla's C implementation of JavaScript."

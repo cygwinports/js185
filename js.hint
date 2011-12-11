@@ -1,4 +1,3 @@
-category: Interpreters
-requires: libgcc1 libreadline7
-sdesc: "Mozilla JavaScript engine (command-line interpreter)"
+category: Libs
+sdesc: "Mozilla JavaScript engine (sources)"
 ldesc: "Mozilla's C implementation of JavaScript."

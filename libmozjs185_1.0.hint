@@ -1,5 +1,5 @@
 category: Interpreters
-requires: libgcc1
+requires: libffi4 libgcc1 libnspr4 libstdc++6
 external-source: js
 sdesc: "Mozilla JavaScript engine (runtime)"
 ldesc: "Mozilla's C implementation of JavaScript."

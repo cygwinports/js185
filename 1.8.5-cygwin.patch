@@ -1,0 +1,290 @@
+--- origsrc/js-1.8.5/js/src/Makefile.in	2011-03-31 14:08:36.000000000 -0500
++++ src/js-1.8.5/js/src/Makefile.in	2011-06-01 18:09:30.300475500 -0500
+@@ -454,10 +454,10 @@ CPPSRCS += \
+     $(NULL)
+ 
+ LOCAL_INCLUDES = \
+-    -Ictypes/libffi/include \
+     -I. \
+     $(NULL)
+ 
++ifneq (,$(filter ffi,$(OS_LIBS)))
+ ifeq ($(OS_ARCH),OS2)
+ SHARED_LIBRARY_LIBS += \
+     ctypes/libffi/.libs/ffi.a \
+@@ -467,6 +467,7 @@ SHARED_LIBRARY_LIBS += \
+     ctypes/libffi/.libs/libffi.$(LIB_SUFFIX) \
+     $(NULL)
+ endif
++endif
+ 
+ endif # JS_HAS_CTYPES
+ 
+@@ -497,7 +498,7 @@ EXPORTS = $(INSTALLED_HEADERS)
+ 
+ DASH_R		= -r
+ 
+-ifneq (,$(filter OS2 WINCE WINNT,$(OS_ARCH)))
++ifneq (,$(filter CYGWIN OS2 WINCE WINNT,$(OS_ARCH)))
+ SDK_LIBRARY = $(IMPORT_LIBRARY)
+ else
+ SDK_LIBRARY = $(SHARED_LIBRARY)
+@@ -530,7 +531,7 @@ endif
+ 
+ default::
+ 
+-ifneq (,$(CROSS_COMPILE)$(filter-out WINNT OS2,$(OS_ARCH)))
++ifneq (,$(CROSS_COMPILE)$(filter-out CYGWIN WINNT OS2,$(OS_ARCH)))
+ ifneq (,$(filter-out SYMBIAN WINCE,$(OS_ARCH)))
+ # nsinstall doesn't get built until we enter config/ in the exports phase,
+ # so we'll have to manually ensure it gets built here if we want to use
+@@ -801,7 +802,7 @@ endif
+ # - OS_LIBS includes libraries selected by the configure script.
+ # - EXTRA_LIBS includes libraries selected by this Makefile.
+ JS_CONFIG_LIBS=$(EXTRA_DSO_LDOPTS) $(OS_LIBS) $(EXTRA_LIBS) 
+-JS_CONFIG_MOZ_JS_LIBS=-L$(libdir) -l$(LIBRARY_NAME)
++JS_CONFIG_MOZ_JS_LIBS=-L$(libdir) -lmozjs185
+ 
+ # The configure script invokes this rule explicitly at configure time!
+ # It's important that js-config be ready by the time we're done
+--- origsrc/js-1.8.5/js/src/config/rules.mk	2011-03-31 14:08:36.000000000 -0500
++++ src/js-1.8.5/js/src/config/rules.mk	2011-06-01 17:29:19.352577100 -0500
+@@ -272,7 +272,7 @@ ifdef LIB_IS_C_ONLY
+ MKSHLIB			= $(MKCSHLIB)
+ endif
+ 
+-ifneq (,$(filter OS2 WINNT WINCE,$(OS_ARCH)))
++ifneq (,$(filter CYGWIN OS2 WINNT WINCE,$(OS_ARCH)))
+ IMPORT_LIBRARY		:= $(LIB_PREFIX)$(SHARED_LIBRARY_NAME).$(IMPORT_LIB_SUFFIX)
+ endif
+ 
+@@ -693,7 +693,7 @@ endif
+ #
+ # MINGW32
+ #
+-ifeq ($(OS_ARCH),WINNT)
++ifneq (,$(filter CYGWIN WINNT,$(OS_ARCH)))
+ ifdef GNU_CC
+ ifndef IS_COMPONENT
+ DSO_LDOPTS += -Wl,--out-implib -Wl,$(IMPORT_LIBRARY)
+@@ -1240,7 +1240,7 @@ endif
+ endif
+ endif
+ 
+-ifeq (,$(filter-out WINNT WINCE, $(OS_ARCH)))
++ifeq (,$(filter-out CYGWIN WINNT WINCE, $(OS_ARCH)))
+ $(IMPORT_LIBRARY): $(SHARED_LIBRARY)
+ endif
+ 
+--- origsrc/js-1.8.5/js/src/configure.in	2011-03-31 14:08:36.000000000 -0500
++++ src/js-1.8.5/js/src/configure.in	2011-06-01 15:45:43.067025900 -0500
+@@ -177,7 +177,7 @@ dnl Default to MSVC for win32 and gcc-4.
+ dnl ==============================================================
+ if test -z "$CROSS_COMPILE"; then
+ case "$target" in
+-*-cygwin*|*-mingw*|*-msvc*|*-mks*)
++*-mingw*|*-msvc*|*-mks*)
+     if test -z "$CC"; then CC=cl; fi
+     if test -z "$CXX"; then CXX=cl; fi
+     if test -z "$CPP"; then CPP="cl -E -nologo"; fi
+@@ -600,7 +600,7 @@ case "$WINSDK_TARGETVER" in
+ esac
+ 
+ case "$target" in
+-*-cygwin*|*-mingw*|*-msvc*|*-mks*|*-wince|*-winmo)
++*-mingw*|*-msvc*|*-mks*|*-wince|*-winmo)
+     if test "$GCC" != "yes"; then
+         # Check to see if we are really running in a msvc environemnt
+         _WIN32_MSVC=1
+@@ -1168,7 +1168,7 @@ if test -n "$MAKE"; then
+ fi
+ 
+ case "$host_os" in
+-cygwin*|mingw*|mks*|msvc*)
++mingw*|mks*|msvc*)
+     MOZ_PATH_PROGS(GMAKE, $GMAKE $NOT_PYMAKE make gmake, :)
+     ;;
+ *)
+@@ -1270,9 +1270,12 @@ HOST_OS_ARCH=`echo $host_os | sed -e 's|
+ #
+ 
+ case "$HOST_OS_ARCH" in
+-cygwin*|mingw*|mks*|msvc*)
++mingw*|mks*|msvc*)
+     HOST_OS_ARCH=WINNT
+     ;;
++cygwin*)
++    HOST_OS_ARCH=Cygwin
++    ;;
+ darwin*)
+     HOST_OS_ARCH=Darwin
+     ;;
+@@ -1363,7 +1366,7 @@ Windows_NT)
+     fi
+     OS_RELEASE="${OS_RELEASE}.${OS_MINOR_RELEASE}"
+     ;;
+-CYGWIN32_NT|CYGWIN_NT*|MINGW*_NT*)
++CYGWIN32_NT|MINGW*_NT*)
+ #
+ # If uname -s returns "CYGWIN_NT-4.0", we assume that we are using
+ # the uname.exe in the Cygwin tools.
+@@ -1377,6 +1380,11 @@ CYGWIN32_NT|CYGWIN_NT*|MINGW*_NT*)
+     OS_ARCH=WINNT
+     OS_TARGET=WINNT
+     ;;
++CYGWIN_NT*)
++    OS_RELEASE=1.7
++    OS_ARCH=CYGWIN
++    OS_TARGET=CYGWIN
++    ;;
+ AIX)
+     OS_RELEASE=`uname -v`.`uname -r`
+     OS_TEST=${target_cpu}
+@@ -1834,7 +1842,13 @@ case "$host" in
+     HOST_OPTIMIZE_FLAGS="${HOST_OPTIMIZE_FLAGS=-O3}"
+     ;;
+ 
+-*cygwin*|*mingw*|*mks*|*msvc*|*wince|*winmo)
++*-cygwin*)
++    HOST_CFLAGS="$HOST_CFLAGS -DXP_UNIX"
++    HOST_OPTIMIZE_FLAGS="${HOST_OPTIMIZE_FLAGS=-O3}"
++    HOST_BIN_SUFFIX=.exe
++    ;;
++
++*mingw*|*mks*|*msvc*|*wince|*winmo)
+     # we need Python 2.5 on Windows
+     PYTHON_VERSION=2.5
+     if test -n "$_WIN32_MSVC"; then
+@@ -2334,7 +2348,20 @@ ia64*-hpux*)
+     RANLIB='echo no ranlib '
+ ;;
+ 
+-*-mingw*|*-cygwin*|*-msvc*|*-mks*)
++*-cygwin*)
++    DSO_CFLAGS=
++    DSO_PIC_CFLAGS=
++    BIN_SUFFIX=.exe
++    DLL_PREFIX=cyg
++    DLL_SUFFIX=.dll
++    IMPORT_LIB_SUFFIX=dll.a
++    DSO_LDOPTS='-shared'
++    MKSHLIB='$(CXX) $(DSO_LDOPTS) -o $@'
++    MKCSHLIB='$(CC) $(DSO_LDOPTS) -o $@'
++    MOZ_JS_LIBS='-L$(libdir) -lmozjs'
++;;
++
++*-mingw*|*-msvc*|*-mks*)
+     DSO_CFLAGS=
+     DSO_PIC_CFLAGS=
+     DLL_SUFFIX=.dll
+@@ -3044,7 +3071,10 @@ case "$target" in
+ *-gnu*)
+     AC_DEFINE(AVMPLUS_UNIX)
+     ;;
+-*-cygwin*|*-mingw*|*-mks*|*-msvc*|*-wince|*-winmo)
++*-cygwin*)
++    AC_DEFINE(AVMPLUS_UNIX)
++    ;;
++*-mingw*|*-mks*|*-msvc*|*-wince|*-winmo)
+     AC_DEFINE(AVMPLUS_WIN32)
+     ;;
+ *-os2*)
+@@ -3775,6 +3805,7 @@ if test "$ac_cv_have_clock_monotonic" =
+     AC_SUBST(REALTIME_LIBS)
+ fi
+ 
++if test -z "$ac_cv_have_systemtimetofiletime"; then
+ dnl Windows functions, for mingw.
+ AC_TRY_LINK([#include <windows.h>],
+              [SYSTEMTIME st;FILETIME ft;SystemTimeToFileTime(&st,&ft);],
+@@ -3783,6 +3814,8 @@ AC_TRY_LINK([#include <windows.h>],
+ if test "$ac_cv_have_systemtimetofiletime" = "yes"; then
+     AC_DEFINE(HAVE_SYSTEMTIMETOFILETIME)
+ fi
++fi
++if test -z "$ac_cv_have_getsystemtimeasfiletime"; then
+ AC_TRY_LINK([#include <windows.h>],
+              [FILETIME ft;GetSystemTimeAsFileTime(&ft);],
+              ac_cv_have_getsystemtimeasfiletime="yes",
+@@ -3790,6 +3823,7 @@ AC_TRY_LINK([#include <windows.h>],
+ if test "$ac_cv_have_getsystemtimeasfiletime" = "yes"; then
+     AC_DEFINE(HAVE_GETSYSTEMTIMEASFILETIME)
+ fi
++fi
+ 
+ dnl check for wcrtomb/mbrtowc
+ dnl =======================================================================
+@@ -3859,7 +3893,7 @@ if test "$ac_cv_func_gnu_get_libc_versio
+ fi
+ 
+ case $target_os in
+-    os2*|msvc*|mks*|cygwin*|mingw*|darwin*|wince*|winmo*|beos*)
++    os2*|msvc*|mks*|mingw*|darwin*|wince*|winmo*|beos*)
+         ;;
+     *)
+     
+@@ -4944,7 +4978,10 @@ if test "$MOZ_MEMORY"; then
+   *-solaris*)
+     AC_DEFINE(MOZ_MEMORY_SOLARIS)
+     ;;
+-  *-msvc*|*-mks*|*-cygwin*|*-mingw*)
++  *-cygwin*)
++    AC_DEFINE(MOZ_MEMORY_LINUX)
++    ;;
++  *-msvc*|*-mks*|*-mingw*)
+     AC_DEFINE(MOZ_MEMORY_WINDOWS)
+     # the interesting bits will get passed down in MOZ_MEMORY_LDFLAGS
+     ;;
+@@ -5602,7 +5639,7 @@ EDITLINE_LIBS=
+ JS_DISABLE_SHELL=
+ 
+ case "$target" in
+-*-wince*|*-winmo*|*-mingw*|*-cygwin*|*-msvc*|*-mks*)
++*-wince*|*-winmo*|*-mingw*|*-msvc*|*-mks*)
+     NO_EDITLINE=1
+     ;;
+ *-symbian*)
+@@ -5942,7 +5979,7 @@ case "$host_os" in
+ mingw*)
+     WIN_TOP_SRC=`cd $srcdir; pwd -W`
+     ;;
+-cygwin*|msvc*|mks*)
++msvc*|mks*)
+     HOST_CC="\$(CYGWIN_WRAPPER) $HOST_CC"
+     HOST_CXX="\$(CYGWIN_WRAPPER) $HOST_CXX"
+     CC="\$(CYGWIN_WRAPPER) $CC"
+--- origsrc/js-1.8.5/js/src/jsnativestack.cpp	2011-03-31 14:08:36.000000000 -0500
++++ src/js-1.8.5/js/src/jsnativestack.cpp	2011-06-01 12:32:03.001396200 -0500
+@@ -40,6 +40,10 @@
+ #include "jstypes.h"
+ #include "jsnativestack.h"
+ 
++#ifdef __CYGWIN__
++# define XP_WIN
++#endif
++
+ #ifdef XP_WIN
+ # include "jswin.h"
+ 
+--- origsrc/js-1.8.5/js/src/methodjit/MethodJIT.cpp	2011-03-31 14:08:36.000000000 -0500
++++ src/js-1.8.5/js/src/methodjit/MethodJIT.cpp	2011-06-01 12:32:03.005396400 -0500
+@@ -139,7 +139,7 @@ SetVMFrameRegs(VMFrame &f)
+     f.cx->setCurrentRegs(&f.regs);
+ }
+ 
+-#if defined(__APPLE__) || (defined(XP_WIN) && !defined(JS_CPU_X64)) || defined(XP_OS2)
++#if defined(__APPLE__) || defined(__CYGWIN__) || (defined(XP_WIN) && !defined(JS_CPU_X64)) || defined(XP_OS2)
+ # define SYMBOL_STRING(name) "_" #name
+ #else
+ # define SYMBOL_STRING(name) #name
+--- origsrc/js-1.8.5/js/src/shell/Makefile.in	2011-03-31 14:08:36.000000000 -0500
++++ src/js-1.8.5/js/src/shell/Makefile.in	2011-06-01 16:14:34.144037900 -0500
+@@ -52,7 +52,7 @@ CPPSRCS		= \
+ 
+ DEFINES         += -DEXPORT_JS_API
+ 
+-LIBS      = $(NSPR_LIBS) $(EDITLINE_LIBS) $(DEPTH)/$(LIB_PREFIX)js_static.$(LIB_SUFFIX)
++LIBS      = $(EDITLINE_LIBS) $(DEPTH)/$(LIB_PREFIX)js_static.$(LIB_SUFFIX) $(NSPR_LIBS)
+ 
+ LOCAL_INCLUDES += -I$(topsrcdir) -I..
+ 
