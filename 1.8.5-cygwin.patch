@@ -253,19 +253,6 @@
      HOST_CC="\$(CYGWIN_WRAPPER) $HOST_CC"
      HOST_CXX="\$(CYGWIN_WRAPPER) $HOST_CXX"
      CC="\$(CYGWIN_WRAPPER) $CC"
---- origsrc/js-1.8.5/js/src/jsnativestack.cpp	2011-03-31 14:08:36.000000000 -0500
-+++ src/js-1.8.5/js/src/jsnativestack.cpp	2011-06-01 12:32:03.001396200 -0500
-@@ -40,6 +40,10 @@
- #include "jstypes.h"
- #include "jsnativestack.h"
- 
-+#ifdef __CYGWIN__
-+# define XP_WIN
-+#endif
-+
- #ifdef XP_WIN
- # include "jswin.h"
- 
 --- origsrc/js-1.8.5/js/src/methodjit/MethodJIT.cpp	2011-03-31 14:08:36.000000000 -0500
 +++ src/js-1.8.5/js/src/methodjit/MethodJIT.cpp	2011-06-01 12:32:03.005396400 -0500
 @@ -139,7 +139,7 @@ SetVMFrameRegs(VMFrame &f)
