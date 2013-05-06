@@ -1,13 +1,16 @@
 NAME="js185"
 VERSION=1.0.0
-RELEASE=2
+RELEASE=3
 CATEGORY="Interpreters"
 SUMMARY="Mozilla JavaScript engine"
 DESCRIPTION="SpiderMonkey is Mozilla's JavaScript engine written in C/C++."
 HOMEPAGE="http://www.mozilla.org/js/spidermonkey/"
 SRC_URI="ftp://ftp.mozilla.org/pub/mozilla.org/js/${NAME}-${VERSION}.tar.gz"
 SRC_DIR="js-1.8.5/js/src"
-PATCH_URI="1.8.5-cygwin.patch"
+PATCH_URI="
+	http://pkgs.fedoraproject.org/cgit/js.git/plain/js185-libedit.patch
+	1.8.5-cygwin.patch
+"
 
 PKG_NAMES="libmozjs185_1.0 libmozjs185-devel"
 libmozjs185_1_0_SUMMARY="${SUMMARY} (runtime)"
@@ -30,7 +33,7 @@ src_compile() {
 	export MOZILLA_VERSION=1.8.5
 
 	cygconf --enable-ctypes --enable-readline --enable-threadsafe --with-system-nspr
-	cygmake OS_LIBS=-lffi
+	cygmake
 }
 
 src_test() {

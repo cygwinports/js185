@@ -1,14 +1,17 @@
 --- origsrc/js-1.8.5/js/src/Makefile.in	2011-03-31 14:08:36.000000000 -0500
 +++ src/js-1.8.5/js/src/Makefile.in	2011-06-01 18:09:30.300475500 -0500
-@@ -454,10 +454,10 @@ CPPSRCS += \
+@@ -454,10 +454,13 @@ CPPSRCS += \
      $(NULL)
  
  LOCAL_INCLUDES = \
 -    -Ictypes/libffi/include \
++    `pkg-config --cflags libffi` \
      -I. \
      $(NULL)
  
-+ifneq (,$(filter ffi,$(OS_LIBS)))
++ifneq (,$(filter CYGWIN,$(OS_ARCH)))
++OS_LIBS += `pkg-config --libs libffi`
++else
  ifeq ($(OS_ARCH),OS2)
  SHARED_LIBRARY_LIBS += \
      ctypes/libffi/.libs/ffi.a \
@@ -271,7 +274,7 @@
  DEFINES         += -DEXPORT_JS_API
  
 -LIBS      = $(NSPR_LIBS) $(EDITLINE_LIBS) $(DEPTH)/$(LIB_PREFIX)js_static.$(LIB_SUFFIX)
-+LIBS      = $(EDITLINE_LIBS) $(DEPTH)/$(LIB_PREFIX)js_static.$(LIB_SUFFIX) $(NSPR_LIBS)
++LIBS      = $(EDITLINE_LIBS) $(DEPTH)/$(LIB_PREFIX)js_static.$(LIB_SUFFIX) $(NSPR_LIBS) `pkg-config --libs libffi`
  
  LOCAL_INCLUDES += -I$(topsrcdir) -I..
  
