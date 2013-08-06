@@ -256,6 +256,27 @@
      HOST_CC="\$(CYGWIN_WRAPPER) $HOST_CC"
      HOST_CXX="\$(CYGWIN_WRAPPER) $HOST_CXX"
      CC="\$(CYGWIN_WRAPPER) $CC"
+--- origsrc/js-1.8.5/js/src/jsdtoa.cpp	2011-03-31 14:08:36.000000000 -0500
++++ src/js-1.8.5/js/src/jsdtoa.cpp	2013-08-06 02:06:28.821950600 -0500
+@@ -40,6 +40,7 @@
+ /*
+  * Portable double to alphanumeric string and back converters.
+  */
++#define __STRICT_ANSI__
+ #include "jstypes.h"
+ #include "jsstdint.h"
+ #include "jsdtoa.h"
+--- origsrc/js-1.8.5/js/src/methodjit/MachineRegs.h	2011-03-31 14:08:36.000000000 -0500
++++ src/js-1.8.5/js/src/methodjit/MachineRegs.h	2013-08-06 02:29:22.547523200 -0500
+@@ -212,7 +212,7 @@ struct Registers {
+             return false;
+ # endif
+ #elif defined(JS_CPU_X64)
+-# ifdef _WIN64
++# if defined(_WIN64) || defined(__CYGWIN__)
+         static const RegisterID regs[] = {
+             JSC::X86Registers::ecx,
+             JSC::X86Registers::edx,
 --- origsrc/js-1.8.5/js/src/methodjit/MethodJIT.cpp	2011-03-31 14:08:36.000000000 -0500
 +++ src/js-1.8.5/js/src/methodjit/MethodJIT.cpp	2011-06-01 12:32:03.005396400 -0500
 @@ -139,7 +139,7 @@ SetVMFrameRegs(VMFrame &f)
@@ -263,10 +284,70 @@
  }
  
 -#if defined(__APPLE__) || (defined(XP_WIN) && !defined(JS_CPU_X64)) || defined(XP_OS2)
-+#if defined(__APPLE__) || defined(__CYGWIN__) || (defined(XP_WIN) && !defined(JS_CPU_X64)) || defined(XP_OS2)
++#if defined(__APPLE__) || ((defined(__CYGWIN__) || defined(XP_WIN)) && !defined(JS_CPU_X64)) || defined(XP_OS2)
  # define SYMBOL_STRING(name) "_" #name
  #else
  # define SYMBOL_STRING(name) #name
+--- origsrc/js-1.8.5/js/src/methodjit/MethodJIT.h	2011-03-31 14:08:36.000000000 -0500
++++ src/js-1.8.5/js/src/methodjit/MethodJIT.h	2013-08-06 02:30:13.441434200 -0500
+@@ -96,7 +96,7 @@ struct VMFrame
+ # endif
+ #elif defined(JS_CPU_X64)
+     void *savedRBX;
+-# ifdef _WIN64
++# if defined(_WIN64) || defined(__CYGWIN__)
+     void *savedRSI;
+     void *savedRDI;
+ # endif
+--- origsrc/js-1.8.5/js/src/nanojit/NativeX64.cpp	2011-03-31 14:08:36.000000000 -0500
++++ src/js-1.8.5/js/src/nanojit/NativeX64.cpp	2013-08-06 02:17:42.509483300 -0500
+@@ -68,7 +68,7 @@ tracing
+ namespace nanojit
+ {
+     const Register Assembler::retRegs[] = { RAX };
+-#ifdef _WIN64
++#if defined(_WIN64) || defined(__CYGWIN__)
+     const Register Assembler::argRegs[] = { RCX, RDX, R8, R9 };
+     const static int maxArgRegs = 4;
+     const Register Assembler::savedRegs[] = { RBX, RSI, RDI, R12, R13, R14, R15 };
+@@ -992,7 +992,7 @@ namespace nanojit
+             asm_regarg(ARGTYPE_P, ins->arg(--argc), RAX);
+         }
+ 
+-    #ifdef _WIN64
++    #if defined(_WIN64) || defined(__CYGWIN__)
+         int stk_used = 32; // always reserve 32byte shadow area
+     #else
+         int stk_used = 0;
+@@ -1008,7 +1008,7 @@ namespace nanojit
+                 asm_regarg(ty, arg, argRegs[arg_index]);
+                 arg_index++;
+             }
+-        #ifdef _WIN64
++        #if defined(_WIN64) || defined(__CYGWIN__)
+             else if (ty == ARGTYPE_D && arg_index < NumArgRegs) {
+                 // double goes in XMM reg # based on overall arg_index
+                 Register rxi = XMM0 + arg_index;
+@@ -1986,7 +1986,7 @@ namespace nanojit
+     void Assembler::nRegisterResetAll(RegAlloc &a) {
+         // add scratch registers to our free list for the allocator
+         a.clear();
+-#ifdef _WIN64
++#if defined(_WIN64) || defined(__CYGWIN__)
+         a.free = 0x001fffcf; // rax-rbx, rsi, rdi, r8-r15, xmm0-xmm5
+ #else
+         a.free = 0xffffffff & ~(1<<REGNUM(RSP) | 1<<REGNUM(RBP));
+--- origsrc/js-1.8.5/js/src/nanojit/NativeX64.h	2011-03-31 14:08:36.000000000 -0500
++++ src/js-1.8.5/js/src/nanojit/NativeX64.h	2013-08-06 02:17:58.229382400 -0500
+@@ -336,7 +336,7 @@ namespace nanojit
+ 
+     static const RegisterMask GpRegs = 0xffff;
+     static const RegisterMask FpRegs = 0xffff0000;
+-#ifdef _WIN64
++#if defined(_WIN64) || defined(__CYGWIN__)
+     static const RegisterMask SavedRegs = 1<<REGNUM(RBX) | 1<<REGNUM(RSI) | 1<<REGNUM(RDI) |
+                                           1<<REGNUM(R12) | 1<<REGNUM(R13) | 1<<REGNUM(R14) |
+                                           1<<REGNUM(R15);
 --- origsrc/js-1.8.5/js/src/shell/Makefile.in	2011-03-31 14:08:36.000000000 -0500
 +++ src/js-1.8.5/js/src/shell/Makefile.in	2011-06-01 16:14:34.144037900 -0500
 @@ -52,7 +52,7 @@ CPPSRCS		= \
