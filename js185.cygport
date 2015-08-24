@@ -1,6 +1,6 @@
 NAME="js185"
 VERSION=1.0.0
-RELEASE=3
+RELEASE=4
 CATEGORY="Interpreters"
 SUMMARY="Mozilla JavaScript engine"
 DESCRIPTION="SpiderMonkey is Mozilla's JavaScript engine written in C/C++."
